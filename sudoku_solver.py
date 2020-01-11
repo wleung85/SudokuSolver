@@ -23,6 +23,9 @@ class Square:
         else:
             self.possibles = [value]
 
+    def __str__(self):
+        return str(self.value)
+
 # This represents the entire puzzle with a 9x9 grid of Squares
 class Puzzle:
     def __init__(self, given_values=None):
@@ -42,6 +45,17 @@ class Puzzle:
                 value = 0 if given_values is None else given_values[i][j]
                 row.append(Square(value))
             self.grid.append(row)
+
+    # Gets list of Squares from 0-indexed row of grid
+    def row(self, index):
+        return self.grid[index]
+
+    # Gets list of Squares from 0-indexed column of grid
+    def col(self, index):
+        col = []
+        for row in range(len(self.grid)):
+            col.append(self.grid[row][index])
+        return col
 
     def __str__(self):
         # Method to give a string representation of what the puzzle looks like
@@ -72,7 +86,16 @@ if __name__ == "__main__":
     print("Creating filled puzzle")
     input_arr = []
     for i in range(9):
-        row = [i for i in range(1, 10)]
+        row = [j for j in range(1, 10)]
         input_arr.append(row)
     filled_puzzle = Puzzle(input_arr)
     print(filled_puzzle)
+    
+    row = filled_puzzle.row(2)
+    for val in row:
+        print(val)
+    col = filled_puzzle.col(4)
+    for val in col:
+        print(val)
+
+    print("Finished run")
