@@ -4,26 +4,36 @@
 # This represents one index/square with one value
 class Square:
     def __init__(self, value=0, solved=False):
-        self.value = value
+        self.possibles = []     # possible values
+        self._value = value
         self.solved = solved
+
+    @property
+    def value(self):
+        return self._value
+    
+    @value.setter
+    def value(self, value):
+        # Range check value
+        if value < 0 or value > 9:
+            raise ValueError("Square must have value 1-9 or 0 to indicate no value")
+        self._value = value
+        if value == 0:
+            self.possibles = [i for i in range(1,10)]
+        else:
+            self.possibles = [value]
 
 # This represents the entire puzzle with a 9x9 grid of Squares
 class Puzzle:
     def __init__(self, given_values=None):
         # Type check to make sure given values is a 2D array with lengths of 9x9
         if given_values != None:
-            if not isinstance(given_values, list):
-                return ValueError("Puzzle must be initialized with a 9x9 2D array")
+            if not isinstance(given_values, list) or len(given_values) != 9:
+                raise ValueError("Puzzle must be initialized with a 9x9 2D sarray")
             else:
-                if len(given_values) != 9:
-                    raise ValueError("Puzzle must be initialized with a 9x9 2D array")
                 for i in range(9):
                     if len(given_values[i]) != 9:
                         raise ValueError("Puzzle must be initialized with a 9x9 2D array")
-                    for j in range(9):
-                        if given_values[i][j] < 0 or given_values[i][j] > 9:
-                            raise ValueError("Puzzle must be initialized with values 1-9 or \
-                                    value 0 to indicate an empty (unsolved) square")
 
         # Create grid with empty Squares
         if given_values == None:
