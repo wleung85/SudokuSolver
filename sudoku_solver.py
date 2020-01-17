@@ -96,6 +96,45 @@ class Puzzle:
 
         return solved
 
+    @staticmethod
+    # Checks if list of squares is valid (no duplicates)
+    def sqlist_is_valid(lst):
+        valid = True
+        if len(lst) != 9:
+            valid = False
+        else:
+            seen = []
+            for square in lst:
+                # Range check value and add to seen list if unknown
+                if square.value < 0 or square.value > 9 or square.value in seen:
+                    valid = False
+                    break
+                elif square.value != 0:
+                    seen.append(square.value)
+        return valid
+
+    @staticmethod
+    # Parses list of squares to find values and eliminates seen values from unknown
+    # squares' possible values. If only one possible is left, the square is solved
+    def sqlist_eval_possibles(lst):
+        if not Puzzle.sqlist_is_solved(lst) and Puzzle.sqlist_is_valid(lst):
+            # Find all known values to seen list
+            seen = []
+            for square in lst:
+                if square.value != 0:
+                    seen.append(square.value)
+            
+            for square in lst:
+                if square.value == 0:
+                    for value in seen:
+                        try:
+                            square.possibles.remove(value)
+                        except ValueError:
+                            # Seen value isn't in possibles list
+                            pass
+                    if len(square.possibles) == 1:
+                        square.value = square.possibles[0]
+
     # Gets Square object using row and column index
     def get_square(self, row, col):
         return self.grid[row][col]
@@ -235,6 +274,13 @@ if __name__ == "__main__":
     print(solved_puzzle)
     print(solved_puzzle.is_solved())
 
-    # TODO: solved_puzzle should return solved, getting subgrid seems broken
+    print("-" * 20)
+    print("Check is valid, is solved, and eliminating possibles from list of squares")
+    square_list = [Square(8), Square(0), Square(7),\
+                   Square(9), Square(6), Square(5),\
+                   Square(3), Square(4), Square(1)]
+    print("List of squares is valid?", Puzzle.sqlist_is_valid(square_list))
+    print("List of squares is solved?", Puzzle.sqlist_is_solved(square_list))
+    Puzzle.sqlist_eval_possibles(square_list)
 
     print("Finished run")
