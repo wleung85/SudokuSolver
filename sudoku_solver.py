@@ -58,25 +58,43 @@ class Puzzle:
 
     # Returns True if Puzzle is solved, else False
     def is_solved(self):
-        for row in range(PUZ_HEIGHT):
-            lst = self.get_row(row)
-            if not self.sqlist_is_solved(lst):
+        all_square_lists = self.get_all_sqlists()
+        for sqlist in all_square_lists:
+            if not self.sqlist_is_solved(sqlist):
                 return False
-
-        for col in range(PUZ_WIDTH):
-            lst = self.get_col(col)
-            if not self.sqlist_is_solved(lst):
-                return False
-
-        for row in range(PUZ_HEIGHT // 3):
-            for col in range(PUZ_WIDTH // 3):
-                lst = self.get_subgrid(row * 3, col * 3)
-                if not self.sqlist_is_solved(lst):
-                    return False
 
         return True
-            
     
+    # Returns True if Puzzle is valid, else False
+    def is_valid(self):
+        all_square_lists = self.get_all_sqlists()
+        for sqlist in all_square_lists:
+            if not self.sqlist_is_valid(sqlist):
+                return False
+
+        return True
+
+    # Iterates through all rows and columns and subgrids while eliminating
+    # possibilities and solving. Returns False if puzzle did not change
+    def eval_all_sqlist(self):
+        puzzle_changed = False
+        all_square_lists = self.get_all_sqlists()
+        for sqlist in all_square_lists:
+            if self.sqlist_eval_possibles(sqlist):
+                puzzle_changed = True
+        return puzzle_changed
+
+    # Continuously runs eval_all_sqlist to eliminate possibilities. Will stop
+    # if puzzle is solved or puzzle doesn't change after an iteration. Returns
+    # true if puzzle is solved, else false
+    def solve(self, verbose=False):
+        if verbose:
+            print(self)
+        while not self.is_solved() and self.is_valid() and self.eval_all_sqlist():
+            if verbose:
+                print(self)
+        return self.is_solved()
+
     @staticmethod
     # Checks if list of squares is solved (i.e. contains values 1-9)
     def sqlist_is_solved(lst):
@@ -115,8 +133,10 @@ class Puzzle:
 
     @staticmethod
     # Parses list of squares to find values and eliminates seen values from unknown
-    # squares' possible values. If only one possible is left, the square is solved
+    # squares' possible values. If only one possible is left, the square is solved.
+    # If no possibles were changed (i.e. no new info) returns false
     def sqlist_eval_possibles(lst):
+        possibles_eliminated = False
         if not Puzzle.sqlist_is_solved(lst) and Puzzle.sqlist_is_valid(lst):
             # Find all known values to seen list
             seen = []
@@ -129,11 +149,13 @@ class Puzzle:
                     for value in seen:
                         try:
                             square.possibles.remove(value)
+                            possibles_eliminated = True
                         except ValueError:
                             # Seen value isn't in possibles list
                             pass
                     if len(square.possibles) == 1:
                         square.value = square.possibles[0]
+        return possibles_eliminated
 
     # Gets Square object using row and column index
     def get_square(self, row, col):
@@ -182,6 +204,21 @@ class Puzzle:
         for row_iter in range(PUZ_HEIGHT // 3):
             for col_iter in range(PUZ_WIDTH // 3):
                 result.append(self.grid[row + row_iter][col + col_iter])
+
+        return result
+
+    # Returns a list of all combinations of rows, columns, and subgrids
+    def get_all_sqlists(self):
+        result = []
+        for row in range(PUZ_HEIGHT):
+            result.append(self.get_row(row))
+
+        for col in range(PUZ_WIDTH):
+            result.append(self.get_col(col))
+
+        for row in range(PUZ_HEIGHT // 3):
+            for col in range(PUZ_WIDTH // 3):
+                result.append(self.get_subgrid(row * 3, col * 3))
 
         return result
 
@@ -282,5 +319,23 @@ if __name__ == "__main__":
     print("List of squares is valid?", Puzzle.sqlist_is_valid(square_list))
     print("List of squares is solved?", Puzzle.sqlist_is_solved(square_list))
     Puzzle.sqlist_eval_possibles(square_list)
+
+    print("-" * 20)
+    print("Evaluate solving easy puzzle")
+    input_arr = [[0, 0, 0, 2, 6, 0, 7, 0, 1],\
+                 [6, 8, 0, 0, 7, 0, 0, 9, 0],\
+                 [1, 9, 0, 0, 0, 4, 5, 0, 0],\
+                 [8, 2, 0, 1, 0, 0, 0, 4, 0],\
+                 [0, 0, 4, 6, 0, 2, 9, 0, 0],\
+                 [0, 5, 0, 0, 0, 3, 0, 2, 8],\
+                 [0, 0, 9, 3, 0, 0, 0, 7, 4],\
+                 [0, 4, 0, 0, 5, 0, 0, 3, 6],\
+                 [7, 0, 3, 0, 1, 8, 0, 0, 0]]
+    easy_puzzle = Puzzle(input_arr)
+    # print(easy_puzzle)
+    # while not easy_puzzle.is_solved():
+    #     easy_puzzle.eval_all_sqlist()
+    #     print(easy_puzzle)
+    easy_puzzle.solve(verbose=True)
 
     print("Finished run")
