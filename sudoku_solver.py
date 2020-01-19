@@ -35,6 +35,7 @@ class Square:
     def __str__(self):
         return str(self.value)
 
+
 # This represents the entire puzzle with a 9x9 grid of Squares
 class Puzzle:
     def __init__(self, given_values=None):
@@ -79,7 +80,9 @@ class Puzzle:
     def eval_all_sqlist(self):
         puzzle_changed = False
         all_square_lists = self.get_all_sqlists()
+        sqlist_iter = -1
         for sqlist in all_square_lists:
+            sqlist_iter += 1
             if self.sqlist_eval_possibles(sqlist):
                 puzzle_changed = True
         return puzzle_changed
@@ -138,12 +141,14 @@ class Puzzle:
     def sqlist_eval_possibles(lst):
         possibles_eliminated = False
         if not Puzzle.sqlist_is_solved(lst) and Puzzle.sqlist_is_valid(lst):
-            # Find all known values to seen list
+            # Append all known values to seen list
             seen = []
             for square in lst:
                 if square.value != 0:
                     seen.append(square.value)
-            
+
+            # Remove seen values from unknown squares' list of possible values
+            unknown_squares = []
             for square in lst:
                 if square.value == 0:
                     for value in seen:
@@ -155,6 +160,31 @@ class Puzzle:
                             pass
                     if len(square.possibles) == 1:
                         square.value = square.possibles[0]
+                        seen.append(square.value)
+                    else:
+                        unknown_squares.append(square)
+
+            # Final pass-through of unknown squares to look for values that only exist
+            # in one square's possibles
+            for square in unknown_squares:
+                # Create list of other squares' possibles
+                other_square_possibles = []
+                other_squares = unknown_squares.copy()
+                other_squares.remove(square)
+                for other_square in other_squares:
+                    for value in other_square.possibles:
+                        if value not in other_square_possibles:
+                            other_square_possibles.append(value)
+
+                # If a square's possibles aren't in the other squares' possibles or seen written in another square,
+                # then safe to assume that this square value must be that possible
+                for value in square.possibles:
+                    if value not in other_square_possibles and value not in seen:
+                        square.value = value
+                        possibles_eliminated = True
+                        unknown_squares.remove(square)
+                        break
+
         return possibles_eliminated
 
     # Gets Square object using row and column index
@@ -241,35 +271,36 @@ class Puzzle:
                 output += ("- " * 3 + '+ ') * 2 + "- " * 3 + '\n'
         return output
 
+
 if __name__ == "__main__":
     # Create an empty puzzle with no squares filled
     print("-" * 20)
     print("Creating empty puzzle")
     empty_puzzle = Puzzle()
-    print (empty_puzzle)
+    print(empty_puzzle)
 
     # Create a Puzzle with values
     print("-" * 20)
     print("Creating filled puzzle")
-    input_arr = [[1, 2, 3, 4, 5, 6, 7, 8, 9],\
-                 [2, 3, 4 ,5, 6, 7, 8, 9, 1],\
-                 [3, 4, 5, 6, 7, 8, 9, 1, 2],\
-                 [4, 5, 6, 7, 8, 9, 1, 2, 3],\
-                 [5, 6, 7, 8, 9, 1, 2, 3, 4],\
-                 [6, 7, 8, 9, 1, 2, 3, 4, 5],\
-                 [7, 8, 9, 1, 2, 3, 4, 5, 6],\
-                 [8, 9, 1, 2, 3, 4, 5, 6, 7],\
+    input_arr = [[1, 2, 3, 4, 5, 6, 7, 8, 9],
+                 [2, 3, 4, 5, 6, 7, 8, 9, 1],
+                 [3, 4, 5, 6, 7, 8, 9, 1, 2],
+                 [4, 5, 6, 7, 8, 9, 1, 2, 3],
+                 [5, 6, 7, 8, 9, 1, 2, 3, 4],
+                 [6, 7, 8, 9, 1, 2, 3, 4, 5],
+                 [7, 8, 9, 1, 2, 3, 4, 5, 6],
+                 [8, 9, 1, 2, 3, 4, 5, 6, 7],
                  [9, 1, 2, 3, 4, 5, 6, 7, 8]]
     filled_puzzle = Puzzle(input_arr)
     print(filled_puzzle)
-    
+
     print("-" * 20)
     print("Getting row 2")
     row = filled_puzzle.get_row(2)
     for val in row:
         print(val)
     print("-" * 20)
-    print("Getting column 4")    
+    print("Getting column 4")
     col = filled_puzzle.get_col(4)
     for val in col:
         print(val)
@@ -298,14 +329,14 @@ if __name__ == "__main__":
     # print("Check if filled puzzle is solved")
     # print(filled_puzzle.is_solved())
     print("Check if solved puzzle is solved")
-    input_arr = [[8, 2, 7, 1, 5, 4, 3, 9, 6],\
-                 [9, 6, 5, 3, 2, 7, 1, 4, 8],\
-                 [3, 4, 1, 6, 8, 9, 7, 5, 2],\
-                 [5, 9, 3, 4, 6, 8, 2, 7, 1],\
-                 [4, 7, 2, 5, 1, 3, 6, 8, 9],\
-                 [6, 1, 8, 9, 7, 2, 4, 3, 5],\
-                 [7, 8, 6, 2, 3, 5, 9, 1, 4],\
-                 [1, 5, 4, 7, 9, 6, 8, 2, 3],\
+    input_arr = [[8, 2, 7, 1, 5, 4, 3, 9, 6],
+                 [9, 6, 5, 3, 2, 7, 1, 4, 8],
+                 [3, 4, 1, 6, 8, 9, 7, 5, 2],
+                 [5, 9, 3, 4, 6, 8, 2, 7, 1],
+                 [4, 7, 2, 5, 1, 3, 6, 8, 9],
+                 [6, 1, 8, 9, 7, 2, 4, 3, 5],
+                 [7, 8, 6, 2, 3, 5, 9, 1, 4],
+                 [1, 5, 4, 7, 9, 6, 8, 2, 3],
                  [2, 3, 9, 8, 4, 1, 5, 6, 7]]
     solved_puzzle = Puzzle(input_arr)
     print(solved_puzzle)
@@ -313,8 +344,8 @@ if __name__ == "__main__":
 
     print("-" * 20)
     print("Check is valid, is solved, and eliminating possibles from list of squares")
-    square_list = [Square(8), Square(0), Square(7),\
-                   Square(9), Square(6), Square(5),\
+    square_list = [Square(8), Square(0), Square(7),
+                   Square(9), Square(6), Square(5),
                    Square(3), Square(4), Square(1)]
     print("List of squares is valid?", Puzzle.sqlist_is_valid(square_list))
     print("List of squares is solved?", Puzzle.sqlist_is_solved(square_list))
@@ -322,14 +353,14 @@ if __name__ == "__main__":
 
     print("-" * 20)
     print("Evaluate solving easy puzzle")
-    input_arr = [[0, 0, 0, 2, 6, 0, 7, 0, 1],\
-                 [6, 8, 0, 0, 7, 0, 0, 9, 0],\
-                 [1, 9, 0, 0, 0, 4, 5, 0, 0],\
-                 [8, 2, 0, 1, 0, 0, 0, 4, 0],\
-                 [0, 0, 4, 6, 0, 2, 9, 0, 0],\
-                 [0, 5, 0, 0, 0, 3, 0, 2, 8],\
-                 [0, 0, 9, 3, 0, 0, 0, 7, 4],\
-                 [0, 4, 0, 0, 5, 0, 0, 3, 6],\
+    input_arr = [[0, 0, 0, 2, 6, 0, 7, 0, 1],
+                 [6, 8, 0, 0, 7, 0, 0, 9, 0],
+                 [1, 9, 0, 0, 0, 4, 5, 0, 0],
+                 [8, 2, 0, 1, 0, 0, 0, 4, 0],
+                 [0, 0, 4, 6, 0, 2, 9, 0, 0],
+                 [0, 5, 0, 0, 0, 3, 0, 2, 8],
+                 [0, 0, 9, 3, 0, 0, 0, 7, 4],
+                 [0, 4, 0, 0, 5, 0, 0, 3, 6],
                  [7, 0, 3, 0, 1, 8, 0, 0, 0]]
     easy_puzzle = Puzzle(input_arr)
     # print(easy_puzzle)
@@ -340,28 +371,28 @@ if __name__ == "__main__":
 
     print("-" * 20)
     print("Evaluate solving medium puzzle")
-    input_arr = [[5, 0, 7, 0, 9, 0, 3, 0, 0],\
-                 [3, 0, 8, 0, 7, 2, 0, 0, 0],\
-                 [2, 1, 0, 0, 0, 3, 0, 0, 0],\
-                 [0, 2, 0, 0, 0, 7, 0, 0, 1],\
-                 [7, 0, 0, 0, 1, 0, 0, 2, 8],\
-                 [4, 3, 0, 2, 0, 0, 0, 0, 0],\
-                 [0, 0, 0, 3, 0, 0, 0, 8, 9],\
-                 [0, 0, 0, 1, 4, 0, 2, 0, 7],\
-                 [0, 0, 3, 0, 8, 0, 1, 0, 6]]
+    input_arr = [[3, 0, 0, 0, 0, 8, 7, 4, 0],
+                 [8, 0, 0, 3, 0, 0, 0, 2, 6],
+                 [0, 0, 0, 4, 0, 0, 0, 0, 3],
+                 [0, 0, 0, 0, 0, 0, 9, 3, 7],
+                 [0, 1, 0, 0, 0, 0, 0, 8, 0],
+                 [7, 6, 4, 0, 0, 0, 0, 0, 0],
+                 [6, 0, 0, 0, 0, 4, 0, 0, 0],
+                 [4, 8, 0, 0, 0, 7, 0, 0, 5],
+                 [0, 7, 9, 8, 0, 0, 0, 0, 2]]
     med_puzzle = Puzzle(input_arr)
     med_puzzle.solve(verbose=True)
 
     print("-" * 20)
     print("Evaluate solving hard puzzle")
-    input_arr = [[0, 3, 0, 0, 0, 5, 0, 0, 0],\
-                 [4, 0, 0, 6, 0, 0, 7, 1, 3],\
-                 [6, 0, 0, 0, 0, 0, 0, 9, 0],\
-                 [7, 0, 0, 0, 2, 0, 0, 0, 0],\
-                 [0, 1, 0, 4, 6, 9, 0, 8, 0],\
-                 [0, 0, 0, 0, 7, 0, 0, 0, 6],\
-                 [0, 8, 0, 0, 0, 0, 0, 0, 2],\
-                 [2, 4, 9, 0, 0, 6, 0, 0, 5],\
+    input_arr = [[0, 3, 0, 0, 0, 5, 0, 0, 0],
+                 [4, 0, 0, 6, 0, 0, 7, 1, 3],
+                 [6, 0, 0, 0, 0, 0, 0, 9, 0],
+                 [7, 0, 0, 0, 2, 0, 0, 0, 0],
+                 [0, 1, 0, 4, 6, 9, 0, 8, 0],
+                 [0, 0, 0, 0, 7, 0, 0, 0, 6],
+                 [0, 8, 0, 0, 0, 0, 0, 0, 2],
+                 [2, 4, 9, 0, 0, 6, 0, 0, 5],
                  [0, 0, 0, 9, 0, 0, 0, 6, 0]]
     hard_puzzle = Puzzle(input_arr)
     hard_puzzle.solve(verbose=True)
