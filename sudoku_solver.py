@@ -1,13 +1,18 @@
 # This project solves sudoku problems
+import copy
+
 
 PUZ_WIDTH = 9
 PUZ_HEIGHT = 9
 
+
 # This represents one index/square with one value
 class Square:
-    def __init__(self, value=0):
+    def __init__(self, value=0, x=None, y=None):
         self.possibles = []     # possible values
         self.value = value
+        self.x = x
+        self.y = y
         
         # Square is already solved and given if initialized with a non-zero/blank
         if value:
@@ -42,7 +47,7 @@ class Puzzle:
         self.solved = False
         self.grid = []
         # Type check to make sure given values is a 2D array with lengths of 9x9
-        if given_values != None:
+        if given_values is not None:
             if not isinstance(given_values, list) or len(given_values) != PUZ_HEIGHT:
                 raise ValueError("Puzzle must be initialized with a 9x9 2D array")
             for row in given_values:
@@ -54,7 +59,7 @@ class Puzzle:
             row = []
             for j in range(PUZ_WIDTH):
                 value = 0 if given_values is None else given_values[i][j]
-                row.append(Square(value))
+                row.append(Square(value=value, x=j, y=i))
             self.grid.append(row)
 
     # Returns True if Puzzle is solved, else False
@@ -80,7 +85,7 @@ class Puzzle:
     def eval_all_sqlist(self):
         puzzle_changed = False
         all_square_lists = self.get_all_sqlists()
-        sqlist_iter = -1
+        sqlist_iter = -1        # TODO: debug tracker, remove later
         for sqlist in all_square_lists:
             sqlist_iter += 1
             if self.sqlist_eval_possibles(sqlist):
@@ -93,10 +98,37 @@ class Puzzle:
     def solve(self, verbose=False):
         if verbose:
             print(self)
+
+        # Use process of elimination until no more possibilities can be eliminated
         while not self.is_solved() and self.is_valid() and self.eval_all_sqlist():
             if verbose:
                 print(self)
+
+        # If still not solved, make a guess and see if that puzzle can be solved
+        if not self.is_solved() and self.is_valid():
+            solution_found = False
+            for unknown_square in self.get_all_unknown_squares():
+                for guess in unknown_square.possibles:
+                    if verbose:
+                        print("**** Making guess ****")
+                    puzzle_copy = copy.deepcopy(self)
+                    puzzle_copy.grid[unknown_square.y][unknown_square.x].value = guess
+                    puzzle_copy.solve(verbose=verbose)
+                    if puzzle_copy.is_solved():
+                        self.copy_puzzle(puzzle_copy, self)
+                        solution_found = True
+                        break
+                if solution_found:
+                    break
+
         return self.is_solved()
+
+    # Copy values from input puzzle into self
+    @staticmethod
+    def copy_puzzle(copy_from, copy_to):
+        for row in range(PUZ_HEIGHT):
+            for col in range(PUZ_WIDTH):
+                copy_to.grid[row][col].value = copy_from.grid[row][col].value
 
     @staticmethod
     # Checks if list of squares is solved (i.e. contains values 1-9)
@@ -181,6 +213,7 @@ class Puzzle:
                 for value in square.possibles:
                     if value not in other_square_possibles and value not in seen:
                         square.value = value
+                        seen.append(value)
                         possibles_eliminated = True
                         unknown_squares.remove(square)
                         break
@@ -190,7 +223,31 @@ class Puzzle:
     # Gets Square object using row and column index
     def get_square(self, row, col):
         return self.grid[row][col]
-    
+
+    # Gets 1D list of all squares in grid
+    def get_all_squares(self):
+        lst = []
+        for row in range(PUZ_HEIGHT):
+            for col in range(PUZ_WIDTH):
+                lst.append(self.get_square(row, col))
+        return lst
+
+    # Gets 1D list of all unknown squares in grid and sorts them by number of possibles from lowest to greatest
+    def get_all_unknown_squares(self):
+        lst = []
+
+        # Get all unknown squares
+        for row in range(PUZ_HEIGHT):
+            for col in range(PUZ_WIDTH):
+                square = self.get_square(row, col)
+                if square.value == 0:
+                    lst.append(square)
+
+        # Sort list of unknown squares from least number of possibles to greatest
+        lst.sort(key=lambda unknown_square: len(unknown_square.possibles))
+
+        return lst
+
     # Gets list of Squares from 0-indexed row of grid
     def get_row(self, index):
         return self.grid[index]
@@ -215,7 +272,7 @@ class Puzzle:
                         square_found = True
                         break
                 if square_found:
-                        break
+                    break
             if not square_found:
                 raise ValueError("Square was not found inside Puzzle")
         # If row and col indices were used, range check
@@ -396,5 +453,21 @@ if __name__ == "__main__":
                  [0, 0, 0, 9, 0, 0, 0, 6, 0]]
     hard_puzzle = Puzzle(input_arr)
     hard_puzzle.solve(verbose=True)
+
+    print("-" * 20)
+    print("Evaluate solving evil puzzle")
+    input_arr = [[0, 0, 0, 0, 2, 0, 0, 0, 0],
+                 [0, 0, 5, 1, 3, 0, 8, 0, 7],
+                 [0, 9, 0, 6, 0, 8, 3, 0, 0],
+                 [6, 1, 0, 0, 0, 0, 0, 0, 0],
+                 [3, 0, 0, 0, 0, 0, 0, 0, 6],
+                 [0, 0, 0, 0, 0, 0, 0, 8, 9],
+                 [0, 0, 3, 8, 0, 2, 0, 4, 0],
+                 [2, 0, 1, 0, 9, 7, 6, 0, 0],
+                 [0, 0, 0, 0, 5, 0, 0, 0, 0]]
+    evil_puzzle = Puzzle(input_arr)
+    evil_puzzle.solve(verbose=True)
+    print(f"Puzzle is valid: {evil_puzzle.is_valid()}")
+    print(f"Puzzle is solved: {evil_puzzle.is_solved()}")
 
     print("Finished run")

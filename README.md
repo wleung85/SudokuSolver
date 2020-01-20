@@ -1,4 +1,4 @@
-# Soduku Solver
+# Sudoku Solver
 
 This Python app solves sudoku puzzles.
 
